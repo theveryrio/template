@@ -1,0 +1,125 @@
+# Author: Chanho Kim <theveryrio@gmail.com>
+
+paths:
+  root_dir: "."
+  data_dir: ${paths.root_dir}/data/
+  log_dir: ${paths.root_dir}/logs
+  output_dir: ${paths.log_dir}/${task_name}/${now:%Y-%m-%d}_${now:%H-%M-%S}
+
+model:
+  _target_: src.modules.Module
+
+  model:
+    _target_: __main__.Model
+
+  optimizer:
+    _target_: torch.optim.Adam
+    _partial_: true
+    lr: 0.001
+    weight_decay: 0.0
+
+  scheduler:
+    _target_: src.scheduler.DefaultLRScheduler
+    _partial_: true
+
+data:
+  _target_: src.datamodules.TemporarySplitDataModule
+
+  batch_size: 1
+
+  train_dataset:
+    _target_: src.datamodules.CSVDataset
+    csv_path: ${paths.data_dir}/${train_csv_file}
+    x_columns: ${x_columns}
+    y_columns: ${y_columns}
+    transform:
+      _target_: __main__.Transform
+      stage: "train"
+
+  val_dataset:
+    _target_: src.datamodules.CSVDataset
+    csv_path: ${paths.data_dir}/${val_csv_file}
+    x_columns: ${x_columns}
+    y_columns: ${y_columns}
+    transform:
+      _target_: __main__.Transform
+      stage: "validate"
+
+  test_dataset:
+    _target_: src.datamodules.CSVDataset
+    csv_path: ${paths.data_dir}/${test_csv_file}
+    x_columns: ${x_columns}
+    y_columns: ${y_columns}
+    transform:
+      _target_: __main__.Transform
+      stage: "test"
+
+  predict_dataset:
+    _target_: src.datamodules.CSVDataset
+    csv_path: ${paths.data_dir}/${predict_csv_file}
+    x_columns: ${x_columns}
+    y_columns: ${y_columns}
+    transform:
+      _target_: __main__.Transform
+      stage: "predict"
+
+trainer:
+  _target_: lightning.pytorch.trainer.Trainer
+  accelerator: gpu
+  devices: [0]
+  fast_dev_run: false
+  max_epochs: 1000
+  log_every_n_steps: 1
+  default_root_dir: ${paths.output_dir}
+
+callbacks:
+  monitor: "val/loss"
+  mode: "min"
+
+  early_stopping:
+    _target_: lightning.pytorch.callbacks.EarlyStopping
+    monitor: ${callbacks.monitor}
+    min_delta: 0.
+    patience: ${trainer.max_epochs}
+    mode: ${callbacks.mode}
+
+  model_checkpoint:
+    _target_: lightning.pytorch.callbacks.ModelCheckpoint
+    dirpath: ${paths.output_dir}/checkpoints
+    filename: "epoch_{epoch:03d}"
+    monitor: ${callbacks.monitor}
+    save_last: true
+    save_top_k: 1
+    mode: ${callbacks.mode}
+
+  model_summary:
+    _target_: lightning.pytorch.callbacks.RichModelSummary
+    max_depth: -1
+
+  learning_rate_monitor:
+    _target_: lightning.pytorch.callbacks.LearningRateMonitor
+    logging_interval: null
+
+logger:
+  csv:
+    _target_: lightning.pytorch.loggers.csv_logs.CSVLogger
+    save_dir: ${paths.output_dir}
+    name: "csv/"
+
+  mlflow:
+    _target_: lightning.pytorch.loggers.mlflow.MLFlowLogger
+    experiment_name: ${task_name}
+    run_name: ${now:%Y-%m-%d}_${now:%H-%M-%S}
+    tracking_uri: ${paths.log_dir}/mlflow/mlruns
+
+train_csv_file: ""
+val_csv_file: ""
+test_csv_file: ""
+predict_csv_file: ""
+
+x_columns: []
+y_columns: []
+
+task_name: ""
+
+seed: 42
