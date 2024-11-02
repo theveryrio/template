@@ -30,12 +30,9 @@ class CSVDataset(Dataset):
         base, ext = os.path.splitext(csv_path)
         if not ext:
             csv_path = base + ".csv"
-            
-        if ext.lower() != ".csv":
+        elif ext.lower() != ".csv":
             return
         if not os.path.exists(csv_path):
-            return
-        if os.path.isdir(csv_path):
             return
 
         columns = pd.read_csv(csv_path, nrows=0).columns.to_list()
