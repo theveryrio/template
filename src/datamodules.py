@@ -28,9 +28,11 @@ class CSVDataset(Dataset):
         super().__init__()
 
         base, ext = os.path.splitext(csv_path)
-        if ext.lower() != ".csv":
+        if not ext:
             csv_path = base + ".csv"
-
+            
+        if ext.lower() != ".csv":
+            return
         if not os.path.exists(csv_path):
             return
         if os.path.isdir(csv_path):
