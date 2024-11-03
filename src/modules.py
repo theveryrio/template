@@ -11,7 +11,7 @@ class Module(LightningModule):
 
     def __init__(
         self,
-        model: torch.nn.Module,
+        net: torch.nn.Module,
         optimizer: torch.optim.Optimizer,
         scheduler: torch.optim.lr_scheduler,
     ) -> None:
@@ -24,33 +24,33 @@ class Module(LightningModule):
 
         # this line allows to access init params with 'self.hparams' attribute
         # also ensures init params will be stored in ckpt
-        self.save_hyperparameters(logger=False, ignore=["model"])
+        self.save_hyperparameters(logger=False, ignore=["net"])
 
-        self.model = model
+        self.net = net
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Perform a forward pass through the model `self.model`.
+        """Perform a forward pass through the model `self.net`.
 
         :param x: An input tensor representing the data to be passed through the model.
         :return: An output tensor produced by the model, containing the model's activations or
             predictions.
         """
-        return self.model(x)
+        return self.net(x)
 
     def move_metrics_to_device(self):
-        """Moves all metrics in the `self.model.metrics` dictionary to the specified device.
+        """Moves all metrics in the `self.net.metrics` dictionary to the specified device.
 
         This ensures that metric computations occur on the correct device (e.g., GPU/CPU).
         """
-        for key, metric in self.model.metrics.items():
-            self.model.metrics[key] = metric.to(self.device)
+        for key, metric in self.net.metrics.items():
+            self.net.metrics[key] = metric.to(self.device)
 
     def reset_metrics(self):
-        """Resets all metrics in the `self.model.metrics` dictionary.
+        """Resets all metrics in the `self.net.metrics` dictionary.
 
         This is useful for clearing any accumulated state before a new epoch starts.
         """
-        for key, metric in self.model.metrics.items():
+        for key, metric in self.net.metrics.items():
             metric.reset()
 
     def on_train_start(self):
@@ -102,9 +102,9 @@ class Module(LightningModule):
         :param stage: Either `"train"`, `"val"`, `"test"`, or `"predict"`.
         :return: A tensor of losses between model predictions and targets.
         """
-        outputs = self.model.model_step(batch)
+        outputs = self.net.model_step(batch)
         log_dict = {}
-        for key, metric in self.model.metrics.items():
+        for key, metric in self.net.metrics.items():
             if key not in outputs:
                 continue
             value = outputs[key]
@@ -151,7 +151,7 @@ class Module(LightningModule):
         :param batch_idx: The index of the current batch.
         :return: The model's prediction for the given batch.
         """
-        return self.model.predict_step(batch)
+        return self.net.predict_step(batch)
 
     def configure_optimizers(self) -> Dict[str, Any]:
         """Choose what optimizers and learning-rate schedulers to use in your optimization.

@@ -1,15 +1,37 @@
 # Author: Chanho Kim <theveryrio@gmail.com>
 
+task_name: ""
+
+train_csv_file: ""
+val_csv_file: ""
+test_csv_file: ""
+predict_csv_file: ""
+
+x_columns: []
+y_columns: []
+
+n_trials: 0
+objective: "test/loss"
+
+seed: 42
+
 paths:
   root_dir: "."
   data_dir: ${paths.root_dir}/data/
   log_dir: ${paths.root_dir}/logs
   output_dir: ${paths.log_dir}/${task_name}/${now:%Y-%m-%d}_${now:%H-%M-%S}
 
+optuna:
+  _target_: optuna.create_study
+  sampler:
+    _target_: optuna.samplers.TPESampler
+    seed: ${seed}
+  directions: ["minimize"]
+
 model:
   _target_: src.modules.Module
 
-  model:
+  net:
     _target_: __main__.Model
 
   optimizer:
@@ -111,15 +133,3 @@ logger:
     experiment_name: ${task_name}
     run_name: ${now:%Y-%m-%d}_${now:%H-%M-%S}
     tracking_uri: ${paths.log_dir}/mlflow/mlruns
-
-train_csv_file: ""
-val_csv_file: ""
-test_csv_file: ""
-predict_csv_file: ""
-
-x_columns: []
-y_columns: []
-
-task_name: ""
-
-seed: 42
