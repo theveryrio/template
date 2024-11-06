@@ -179,7 +179,7 @@ def objective(trial: optuna.Trial, cfg: DictConfig) -> float:
     datamodule = obj_dict["datamodule"]
     trainer = obj_dict["trainer"]
     trainer.fit(model, datamodule)
-    return trainer.test(model, datamodule)[0][cfg.objective]
+    return trainer.test(model, datamodule, ckpt_path="best")[0][cfg.objective]
 
 
 def train_lightning(cfg: DictConfig) -> None:
@@ -191,7 +191,7 @@ def train_lightning(cfg: DictConfig) -> None:
     datamodule = obj_dict["datamodule"]
     trainer = obj_dict["trainer"]
     trainer.fit(model, datamodule)
-    trainer.test(model, datamodule)
+    trainer.test(model, datamodule, ckpt_path="best")
 
 
 def train_lightning_with_optuna(cfg: DictConfig) -> None:
@@ -269,11 +269,24 @@ def create(config_name: str) -> Tuple[LightningModule, LightningDataModule, Trai
     :return: The tuple with LightningModule, LightningDataModule, and Trainer.
     """
     cfg = create_hydra_cfg(config_name)
+    obj_dict = create_lightning(cfg)
+    
+    model = obj_dict["model"]
+    datamodule = obj_dict["datamodule"]
+    trainer = obj_dict["trainer"]
+ 
+    return model, datamodule, trainer
+
+
+def reproduce(config_name: str) -> Tuple[LightningDataModule, Trainer]:
+    """
+    :param config_name: The name of the config (usually the file name without the .yaml extension).
+    :return: The tuple with LightningModule, LightningDataModule, and Trainer.
+    """
+    cfg = create_hydra_cfg(config_name)
     
     datamodule: LightningDataModule = hydra.utils.instantiate(cfg.data)
  
-    model: LightningModule = hydra.utils.instantiate(cfg.model)
-    
     trainer: Trainer = hydra.utils.instantiate(cfg.trainer, logger=False)
  
-    return model, datamodule, trainer
+    return datamodule, trainer
