@@ -17,4 +17,4 @@ mlflow ui --host 0.0.0.0 &
 
 # Start Jupyter Lab
 cd $HOME/template
-jupyter lab --ip=0.0.0.0 --no-browser --allow-root --NotebookApp.token=''
+jupyter lab --ip=0.0.0.0 --no-browser --allow-root --NotebookApp.token='' --FileContentsManager.delete_to_trash=False
