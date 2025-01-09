@@ -68,8 +68,5 @@ RUN pip install \
 RUN git config --global user.email "theveryrio@gmail.com"
 RUN git config --global user.name "Chanho Kim"
 
-# Clone the repository
-RUN git clone https://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@github.com/theveryrio/template.git
-
 # Specify the command to run the application
 CMD ["./template/docker/run_services.sh"]
